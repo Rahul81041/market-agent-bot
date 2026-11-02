@@ -10,6 +10,7 @@ Setup:
 3. Paste them below in TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.
 """
 
+import os
 import time
 import datetime
 import schedule
@@ -17,13 +18,14 @@ import requests
 import yfinance as yf
 
 # ================= TELEGRAM CONFIG =================
-TELEGRAM_BOT_TOKEN = "9089360235:AAElrNvuT_2aDlPnr1i_BVLTGO1ieujJOhU"
-TELEGRAM_CHAT_ID = "1729819060"
+# Reads securely from GitHub Secrets / Environment variables
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 def send_phone_alert(message: str):
     """Sends instant push notification alert to your phone via Telegram."""
-    if TELEGRAM_BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
-        print(f"\n[PHONE ALERT (Telegram not configured yet)]:\n{message}\n")
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print(f"\n[PHONE ALERT (Telegram secrets not set)]:\n{message}\n")
         return False
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
