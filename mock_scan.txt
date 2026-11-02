@@ -1,0 +1,4 @@
+---
+name: mock-scan-results
+description: Mock top NSE stock scan results for wizard
+---
