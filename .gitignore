@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.sqlite3
+.env
+*.log
+nse_equity_list.csv
+learned_rules.json
+stock_universe.json
+.claude/
