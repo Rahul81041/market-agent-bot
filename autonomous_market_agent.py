@@ -18,14 +18,13 @@ import requests
 import yfinance as yf
 
 # ================= TELEGRAM CONFIG =================
-# Reads securely from GitHub Secrets / Environment variables
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+TELEGRAM_BOT_TOKEN = "9089360235:AAGCTAesCisWR2soUzjrp4Suc8RwuOAi7G0"
+TELEGRAM_CHAT_ID = "1729819060"
 
 def send_phone_alert(message: str):
     """Sends instant push notification alert to your phone via Telegram."""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print(f"\n[PHONE ALERT (Telegram secrets not set)]:\n{message}\n")
+    if not TELEGRAM_BOT_TOKEN:
+        print(f"\n[PHONE ALERT (Telegram token missing)]:\n{message}\n")
         return False
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
