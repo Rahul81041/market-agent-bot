@@ -144,19 +144,12 @@ def evening_post_market_report():
     except Exception as e:
         print(f"Error generating evening report: {e}")
 
-# ================= SCHEDULE SETUP =================
-schedule.every().day.at("08:30").do(morning_pre_market_report)
-schedule.every().day.at("17:00").do(evening_post_market_report)
-# Check live prices every 60 seconds during trading hours
-schedule.every(60).seconds.do(live_market_monitor)
-
+# ================= RUN ONCE FOR GITHUB ACTIONS =================
 if __name__ == "__main__":
-    print("🚀 24x7 Indian Market Autonomous Agent started.")
-    print("Ready to send alerts to your phone. Press Ctrl+C to stop.")
+    print("🚀 Running 1-minute market check for GitHub Actions...")
+    send_phone_alert("🤖 *Market Agent Triggered!*\nRunning scheduled stock check...")
 
-    # Send a startup test alert
-    send_phone_alert("🤖 *24x7 Market Agent Activated!*\nListening for live market triggers and preparing daily intelligence reports.")
+    # Run the live monitor once
+    live_market_monitor()
 
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    print("✅ Market check completed. Exiting safely.")
