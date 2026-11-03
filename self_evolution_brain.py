@@ -12,7 +12,7 @@ import requests
 
 DB_NAME = "trades.db"
 RULES_FILE = "learned_rules.json"
-TELEGRAM_BOT_TOKEN = "9089360235:AAGCTAesCisWR2soUzjrp4Suc8RwuOAi7G0"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 class SelfEvolutionBrain:
 

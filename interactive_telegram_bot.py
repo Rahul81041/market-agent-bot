@@ -33,8 +33,8 @@ from live_news_sentinel import LiveNewsSentinel
 from market_scanner import MarketScanner
 from agent_crew_orchestrator import AgentCrewOrchestrator
 
-TELEGRAM_BOT_TOKEN = "9089360235:AAGCTAesCisWR2soUzjrp4Suc8RwuOAi7G0"
-TELEGRAM_CHAT_ID = "1729819060"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 IST = timezone('Asia/Kolkata')
 

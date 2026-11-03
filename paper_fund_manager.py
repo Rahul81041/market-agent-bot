@@ -184,11 +184,12 @@ class PaperFundManager:
     def monitor_positions(chat_id=None):
         """Monitor open positions and auto-close if targets/SL hit"""
         import yfinance as yf
+        import os
         from pytz import timezone
         import requests
 
         IST = timezone('Asia/Kolkata')
-        TELEGRAM_BOT_TOKEN = "9089360235:AAGCTAesCisWR2soUzjrp4Suc8RwuOAi7G0"
+        TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
         PaperFundManager.init_db()
         conn = sqlite3.connect(DB_NAME)

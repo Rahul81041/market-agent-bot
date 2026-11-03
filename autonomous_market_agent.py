@@ -10,8 +10,8 @@ import yfinance as yf
 import numpy as np
 
 # ================= TELEGRAM CONFIG =================
-TELEGRAM_BOT_TOKEN = "9089360235:AAGCTAesCisWR2soUzjrp4Suc8RwuOAi7G0"
-TELEGRAM_CHAT_ID = "1729819060"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 def send_phone_alert(message: str):
     """Sends instant push notification alert to your phone via Telegram."""

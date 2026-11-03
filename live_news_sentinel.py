@@ -14,7 +14,7 @@ from datetime import datetime
 from pytz import timezone
 
 DB_NAME = "trades.db"
-TELEGRAM_BOT_TOKEN = "9089360235:AAGCTAesCisWR2soUzjrp4Suc8RwuOAi7G0"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 IST = timezone('Asia/Kolkata')
 
 # Real Indian financial RSS feeds

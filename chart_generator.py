@@ -7,7 +7,7 @@ and horizontal lines for Entry, Stop-Loss, and Targets.
 import os
 import requests
 
-TELEGRAM_BOT_TOKEN = "9089360235:AAGCTAesCisWR2soUzjrp4Suc8RwuOAi7G0"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 # Graceful optional import for matplotlib / mplfinance
 try:
