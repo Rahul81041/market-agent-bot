@@ -31,6 +31,7 @@ from signal_tracker import SignalTracker
 from self_evolution_brain import SelfEvolutionBrain
 from live_news_sentinel import LiveNewsSentinel
 from market_scanner import MarketScanner
+from agent_crew_orchestrator import AgentCrewOrchestrator
 
 TELEGRAM_BOT_TOKEN = "9089360235:AAGCTAesCisWR2soUzjrp4Suc8RwuOAi7G0"
 TELEGRAM_CHAT_ID = "1729819060"
@@ -56,24 +57,30 @@ def send_message(chat_id, text, reply_markup=None):
         print(f"Error sending message: {e}")
 
 def get_main_menu():
-    """Main menu with all commands"""
+    """Main menu with all commands - clean, production-grade layout"""
     return {
         "inline_keyboard": [
             [
+                {"text": "🔥 Find Top 5 Stocks to Invest", "callback_data": "cmd_top5"},
+            ],
+            [
                 {"text": "⚔️ Bull vs Bear Debate", "callback_data": "menu_debate"},
-                {"text": "🏆 Verified Track Record", "callback_data": "cmd_trackrecord"}
+                {"text": "💰 My Dummy Wallet & Watchlist", "callback_data": "cmd_wallet"}
             ],
             [
-                {"text": "🎯 Win-Rate Audit", "callback_data": "cmd_winrate"},
-                {"text": "🧠 AI Brain & Mistakes", "callback_data": "cmd_brain"}
+                {"text": "🏆 Verified Track Record", "callback_data": "cmd_trackrecord"},
+                {"text": "🎯 Win-Rate Audit", "callback_data": "cmd_winrate"}
             ],
             [
-                {"text": "📰 Live News Radar", "callback_data": "cmd_news"},
-                {"text": "📊 Market Scanner", "callback_data": "cmd_scan"}
+                {"text": "🧠 AI Brain & Mistakes", "callback_data": "cmd_brain"},
+                {"text": "📰 Live News Radar", "callback_data": "cmd_news"}
             ],
             [
-                {"text": "📋 EOD Report (3:40 PM)", "callback_data": "cmd_eod"},
-                {"text": "💡 How to Use", "callback_data": "help_custom"}
+                {"text": "📊 Market Scanner", "callback_data": "cmd_scan"},
+                {"text": "📋 EOD Report (3:40 PM)", "callback_data": "cmd_eod"}
+            ],
+            [
+                {"text": "💡 How to Use & Commands", "callback_data": "help_custom"}
             ]
         ]
     }
@@ -245,18 +252,34 @@ def run_autonomous_debate(chat_id, symbol):
             f"━━━━━━━━━━━━━━━━━━━━━━"
         )
 
-        # Generate Chart & Send
+        # Generate Chart & Send with Paper Invest inline buttons
         send_message(chat_id, f"📊 *Generating Chart for {sym_clean}...*")
         chart_path = ChartGenerator.generate_chart(sym_clean, df, cmp, stop_loss, target1, target2)
 
+        # Dynamic Action Buttons for this exact analyzed stock
+        stock_action_markup = {
+            "inline_keyboard": [
+                [
+                    {"text": f"🟢 Paper Invest ₹20,000 in {sym_clean}", "callback_data": f"buy_fixed_{sym_clean}_{cmp}_{stop_loss}_{target1}_{target2}_{direction}"}
+                ],
+                [
+                    {"text": "🔥 Find Top 5 Stocks", "callback_data": "cmd_top5"},
+                    {"text": "💰 View Portfolio", "callback_data": "cmd_wallet"}
+                ],
+                [
+                    {"text": "🔙 Back to Main Menu", "callback_data": "main_menu"}
+                ]
+            ]
+        }
+
         if chart_path and os.path.exists(chart_path):
-            ChartGenerator.send_photo(chat_id, chart_path, report, reply_markup=get_main_menu())
+            ChartGenerator.send_photo(chat_id, chart_path, report, reply_markup=stock_action_markup)
             try:
                 os.remove(chart_path)
             except:
                 pass
         else:
-            send_message(chat_id, report, reply_markup=get_main_menu())
+            send_message(chat_id, report, reply_markup=stock_action_markup)
 
     except Exception as e:
         send_message(chat_id, f"❌ Debate error: {str(e)}")
@@ -269,7 +292,7 @@ def start_background_workers(chat_id):
     # 1. Monitor open positions every 2 minutes
     def portfolio_monitor():
         try:
-            PaperFundManager.monitor_open_positions(chat_id)
+            PaperFundManager.monitor_positions(chat_id)
         except Exception as e:
             print(f"Portfolio monitor error: {e}")
 
@@ -309,7 +332,8 @@ def start_background_workers(chat_id):
 
 def send_eod_report(chat_id):
     """Send End-of-Day Portfolio & P&L Report"""
-    wallet = PaperFundManager.get_wallet_summary()
+    wallet = PaperFundManager.get_portfolio_summary(chat_id)
+    track = SignalTracker.get_track_record_summary()
     brain = SelfEvolutionBrain.get_brain_summary()
     perf = TradeLogger.evaluate_performance()
 
@@ -319,8 +343,9 @@ def send_eod_report(chat_id):
         f"📊 *EOD REPORT - {now}*\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"{wallet}\n\n"
+        f"{track}\n\n"
         f"🧠 *TODAY'S SELF-LEARNING*:\n{brain}\n\n"
-        f"📈 *PERFORMANCE TRACKER*:\n{perf}\n"
+        f"📈 *AUDIT SUMMARY*:\n{perf}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"💡 *Tomorrow's Trading Strategy* will be adapted based on today's lessons."
     )
@@ -328,7 +353,7 @@ def send_eod_report(chat_id):
 
 # ================= PAGINATION & STOCK LIST =================
 def get_stocks_for_category_page(category, page=1, page_size=12):
-    """Get stocks for a specific category page"""
+    """Get stocks for a specific category page - FIXED to never show 1/0"""
     if category == "ALL":
         symbols = stock_universe.get_all_symbols()
         stocks = [{"ticker": s, "company": stock_universe._universe.get(s, {}).get('company', s), "sector": "ALL"}
@@ -336,9 +361,16 @@ def get_stocks_for_category_page(category, page=1, page_size=12):
     else:
         stocks = stock_universe.get_stocks_by_sector(category, limit=1000)
 
+    # FIX: Ensure at least 1 page exists, never show 1/0
+    total_stocks = len(stocks)
+    total_pages = max(1, (total_stocks + page_size - 1) // page_size) if total_stocks > 0 else 1
+
+    # Clamp page to valid range
+    page = max(1, min(page, total_pages))
+
     start_idx = (page - 1) * page_size
-    end_idx = start_idx + page_size
-    return stocks[start_idx:end_idx], (len(stocks) + page_size - 1) // page_size
+    end_idx = min(start_idx + page_size, total_stocks)
+    return stocks[start_idx:end_idx], total_pages
 
 def handle_search_query(chat_id, query):
     """Handle universal search - /ANY_STOCK or plain text"""
@@ -372,24 +404,24 @@ def handle_updates():
     print("🚀 Autonomous AI Hedge Fund Bot Active...")
 
     startup_msg = (
-        "🚀 *NEW UPDATED BOT IS STARTED!*\n"
+        "🚀 *PRODUCTION AI HEDGE FUND BOT ONLINE!*\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "✅ *Verified Signal Track Record Engine*\n"
-        "✅ *Full NSE/BSE Universe* (2200+ stocks)\n"
-        "✅ *Self-Evolution Brain* (learns from losses)\n"
-        "✅ *Live News Radar* (RSS feeds)\n"
-        "✅ *EOD Report* (Daily 3:40 PM IST)\n\n"
-        "📋 *Available Commands*:\n"
-        "• `/start` - Main menu\n"
-        "• `/trackrecord` - Verified signal audit\n"
-        "• `/winrate` - Win-rate dashboard\n"
-        "• `/brain` - AI learned mistakes\n"
-        "• `/news` - Breaking market news\n"
-        "• `/scan` - Market scanner status\n"
-        "• `/performance` - Trade audit report\n"
-        "• `/eod` - End-of-day report\n"
-        "• `/debate SYMBOL` - Full analysis\n"
-        "• Type ANY stock name for instant analysis\n"
+        "🔥 *Top 5 Stocks Screener*: Multi-Agent Crew active\n"
+        "💼 *Clean Paper Wallet*: ₹1,00,000 dummy cash\n"
+        "🏆 *Verified Track Record*: Live audited signals\n"
+        "🧠 *Self-Evolution Brain*: Zero repeat mistakes\n"
+        "📰 *News Shock Radar*: Live breaking alerts\n"
+        "📊 *Full NSE Universe*: 2,200+ listed equities\n\n"
+        "📋 *Quick Command Guide*:\n"
+        "• `/top5` - Screen top 5 highest-conviction stocks\n"
+        "• `/wallet` - View dummy portfolio & active watchlist\n"
+        "• `/trackrecord` - Full verified signal performance\n"
+        "• `/winrate` - Win-rate audit & accuracy stats\n"
+        "• `/brain` - Self-learned trading rules\n"
+        "• `/scan` - Live market volume scan\n"
+        "• `/news` - Breaking financial RSS news\n"
+        "• `/debate <SYMBOL>` - Full Bull vs Bear institutional debate\n"
+        "• Or simply send *ANY stock name* (e.g. `TATA`, `ZOMATO`)\n"
         "━━━━━━━━━━━━━━━━━━━━━━"
     )
     send_message(TELEGRAM_CHAT_ID, startup_msg, reply_markup=get_main_menu())
@@ -416,6 +448,29 @@ def handle_updates():
 
                     if data == "main_menu":
                         send_message(chat_id, "Main Menu:", reply_markup=get_main_menu())
+
+                    elif data == "cmd_top5":
+                        send_message(chat_id, "⏳ *Waking up Sub-Agent Crew to screen Top 5 Stocks...*\nAgent 1: Universe Screener\nAgent 2: Price Action & SMC\nAgent 3: F&O Sentiment\nAgent 4: News Radar\nAgent 5: Arbiter Debate")
+                        top_stocks = AgentCrewOrchestrator.run_top_5_analysis()
+                        if not top_stocks:
+                            send_message(chat_id, "⚠️ No high-conviction stocks met the strict institutional criteria right now. Check back shortly!", reply_markup=get_main_menu())
+                        else:
+                            report = "🔥 *TOP 5 INSTITUTIONAL STOCKS TO INVEST*\n━━━━━━━━━━━━━━━━━━━━━━\n"
+                            buttons = []
+                            for i, s in enumerate(top_stocks, 1):
+                                report += (
+                                    f"*{i}. {s['symbol']}* | Conviction: *{s['conviction']}%*\n"
+                                    f"💰 Entry: ₹{s['cmp']} | 🛑 SL: ₹{s['stop_loss']} | 🎯 T1: ₹{s['target1']}\n"
+                                    f"📊 Setup: {s['patterns']} (RVOL: {s['rvol']}x | R:R 1:{s['rr_ratio']})\n\n"
+                                )
+                                buttons.append([{"text": f"🟢 Paper Invest ₹20k in {s['symbol']}", "callback_data": f"buy_fixed_{s['symbol']}_{s['cmp']}_{s['stop_loss']}_{s['target1']}_{s['target2']}_{s['direction']}"}])
+
+                            report += "━━━━━━━━━━━━━━━━━━━━━━\n💡 Tap any button below to execute risk-free paper trade:"
+                            buttons.append([{"text": "🔙 Back to Main Menu", "callback_data": "main_menu"}])
+                            send_message(chat_id, report, reply_markup={"inline_keyboard": buttons})
+
+                    elif data == "cmd_wallet":
+                        send_message(chat_id, PaperFundManager.get_portfolio_summary(chat_id), reply_markup=get_main_menu())
 
                     elif data == "menu_debate":
                         send_message(
@@ -499,6 +554,19 @@ def handle_updates():
                         ticker = data.replace("stock_", "")
                         run_autonomous_debate(chat_id, ticker)
 
+                    elif data.startswith("buy_fixed_"):
+                        # Format: buy_fixed_{symbol}_{cmp}_{sl}_{t1}_{t2}_{dir}
+                        parts = data.split("_")
+                        if len(parts) >= 8:
+                            sym = parts[2]
+                            c_price = float(parts[3])
+                            s_loss = float(parts[4])
+                            tgt1 = float(parts[5])
+                            tgt2 = float(parts[6])
+                            dir_pos = parts[7]
+                            success, msg = PaperFundManager.execute_paper_trade(chat_id, sym, c_price, s_loss, tgt1, tgt2, dir_pos, amount=20000)
+                            send_message(chat_id, msg, reply_markup=get_main_menu())
+
                     elif data == "page_info":
                         send_message(chat_id, "📊 Use Prev/Next buttons to browse more stocks.", reply_markup=get_main_menu())
 
@@ -511,11 +579,31 @@ def handle_updates():
                     if text.startswith("/start"):
                         send_message(chat_id, "🤖 *Welcome back! Chat ID registered.*", reply_markup=get_main_menu())
 
+                    elif text.startswith("/top5"):
+                        send_message(chat_id, "⏳ *Waking up Sub-Agent Crew to screen Top 5 Stocks...*")
+                        top_stocks = AgentCrewOrchestrator.run_top_5_analysis()
+                        if not top_stocks:
+                            send_message(chat_id, "⚠️ No high-conviction stocks met the criteria right now.", reply_markup=get_main_menu())
+                        else:
+                            report = "🔥 *TOP 5 INSTITUTIONAL STOCKS TO INVEST*\n━━━━━━━━━━━━━━━━━━━━━━\n"
+                            buttons = []
+                            for i, s in enumerate(top_stocks, 1):
+                                report += (
+                                    f"*{i}. {s['symbol']}* | Conviction: *{s['conviction']}%*\n"
+                                    f"💰 Entry: ₹{s['cmp']} | 🛑 SL: ₹{s['stop_loss']} | 🎯 T1: ₹{s['target1']}\n"
+                                    f"📊 Setup: {s['patterns']} (RVOL: {s['rvol']}x | R:R 1:{s['rr_ratio']})\n\n"
+                                )
+                                buttons.append([{"text": f"🟢 Paper Invest ₹20k in {s['symbol']}", "callback_data": f"buy_fixed_{s['symbol']}_{s['cmp']}_{s['stop_loss']}_{s['target1']}_{s['target2']}_{s['direction']}"}])
+
+                            report += "━━━━━━━━━━━━━━━━━━━━━━\n💡 Tap any button below to execute risk-free paper trade:"
+                            buttons.append([{"text": "🔙 Back to Main Menu", "callback_data": "main_menu"}])
+                            send_message(chat_id, report, reply_markup={"inline_keyboard": buttons})
+
                     elif text.startswith("/trackrecord") or text.startswith("/winrate"):
                         send_message(chat_id, SignalTracker.get_track_record_summary(), reply_markup=get_main_menu())
 
                     elif text.startswith("/wallet"):
-                        send_message(chat_id, SignalTracker.get_track_record_summary(), reply_markup=get_main_menu())
+                        send_message(chat_id, PaperFundManager.get_portfolio_summary(chat_id), reply_markup=get_main_menu())
 
                     elif text.startswith("/brain") or text.startswith("/mistakes"):
                         send_message(chat_id, SelfEvolutionBrain.get_brain_summary(), reply_markup=get_main_menu())
